@@ -7,6 +7,8 @@ let map;
 let music;
 let tileset;
 let worldLayer;
+let goombas;
+let coins;
 
 const config = {
   type: Phaser.AUTO, // Which renderer to use
@@ -35,24 +37,28 @@ function preload()
   this.load.spritesheet("mario", "../assets/npc/mario_animation.png",{ frameWidth: 16, frameHeight: 16 });
   this.load.audio('music', "../assets/music/super_mario_song.mp3");
   this.load.spritesheet('coin', '../assets/items/coin.png', { frameWidth: 16, frameHeight: 16 });
+  this.load.spritesheet('goomba', '../assets/npc/goomba.png', { frameWidth: 16, frameHeight: 16 });
+
 }
 
 function create()
 {
   createMap(this);
   createPlayer(this);
+  createGoomba(this);
 
   this.physics.add.collider(player, worldLayer);
+  this.physics.add.collider(goombas, worldLayer);
+  this.physics.add.overlap(player, goombas, enemyTouch, null, this);
   cursors = this.input.keyboard.createCursorKeys();
 
   setAnimations(this);
   setCamera(this);
   prepareMusic(this);
 
-
 }
 
-function update(time, delta)
+function playerMovement(that)
 {
   if (cursors.left.isDown)
   {
@@ -68,7 +74,7 @@ function update(time, delta)
   else if (cursors.up.isDown)
   {
     player.setVelocityY(-160);
-      player.anims.play('up', true);
+    player.anims.play('up', true);
   }
   else
   {
@@ -79,7 +85,17 @@ function update(time, delta)
     {
         player.setVelocityY(-330);
     }
+}
 
+function goombasMovement(that)
+{
+
+}
+
+function update(time, delta)
+{
+  playerMovement(this);
+  goombasMovement(this);
 }
 
 function createMap(that)
@@ -96,6 +112,29 @@ function createPlayer(that)
   player.setBounce(0.2);
 }
 
+function createGoomba(that)
+{
+  goombas = that.physics.add.group({
+    key: 'goomba',
+    repeat: 5,
+    setXY: { x: 10, y: 0, stepX: 80 }
+  });
+
+  goombas.children.iterate(function (child) {
+    var distance = Phaser.Math.FloatBetween(-200, 200);
+
+    var tween = that.tweens.add({
+      targets: child,
+      x: distance,               // '+=100'              // '+=100'
+      ease: 'Linear',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
+      duration: 5000,
+      repeat: 1,            // -1: infinity
+      yoyo: true
+});
+  });
+
+}
+
 
 function setCamera(that)
 {
@@ -108,7 +147,6 @@ function setCamera(that)
 function prepareMusic(that)
 {
     musicOn = true;
-
     music = that.sound.add('music');
     music.setLoop(true);
     music.play();
@@ -116,12 +154,12 @@ function prepareMusic(that)
 
 function setAnimations(that)
 {
-  that.anims.create({
-   key: 'right',
-   frames: that.anims.generateFrameNumbers('mario', { start: 0, end: 3 }),
-   frameRate: 8,
-   repeat: 1
- });
+    that.anims.create({
+     key: 'right',
+     frames: that.anims.generateFrameNumbers('mario', { start: 0, end: 3 }),
+     frameRate: 8,
+     repeat: 1
+   });
 
    that.anims.create({
     key: 'left',
@@ -136,4 +174,25 @@ function setAnimations(that)
    frameRate: 8,
    repeat: 1
   });
+
+  that.anims.create({
+   key: 'goomba_movement',
+   frames: that.anims.generateFrameNumbers('goomba', { start: 0, end: 1 }),
+   frameRate: 8,
+   repeat: 1
+  });
+}
+
+function enemyTouch(player, goombas)
+{
+  if (player.body.touching.down) {
+
+    goombas.disableBody(true, true);
+
+  } else {
+
+    player.disableBody(true, true);
+
+  }
+
 }
