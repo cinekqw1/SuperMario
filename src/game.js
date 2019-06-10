@@ -15,6 +15,7 @@ const config = {
   width: 400, // Canvas width in pixels
   height: 300, // Canvas height in pixels
   parent: "game-container", // ID of the DOM element to add the canvas to
+  backgroundColor: "#728BF8",
   scene: {
     preload: preload,
     create: create,
@@ -33,7 +34,7 @@ const game = new Phaser.Game(config);
 function preload()
 {
   this.load.image("tiles", "../assets/map/tileset.png");
-  this.load.tilemapTiledJSON("map", "../assets/map/lv_1.json");
+  this.load.tilemapTiledJSON("map", "../assets/map/lv_2.json");
   this.load.spritesheet("mario", "../assets/npc/mario_animation.png",{ frameWidth: 16, frameHeight: 16 });
   this.load.audio('music', "../assets/music/super_mario_song.mp3");
   this.load.spritesheet('coin', '../assets/items/coin.png', { frameWidth: 16, frameHeight: 16 });
