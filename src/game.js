@@ -34,7 +34,7 @@ const game = new Phaser.Game(config);
 function preload()
 {
   this.load.image("tiles", "../assets/map/tileset.png");
-  this.load.tilemapTiledJSON("map", "../assets/map/lv_2.json");
+  this.load.tilemapTiledJSON("map", "../assets/map/lv_4.json");
   this.load.spritesheet("mario", "../assets/npc/mario_animation.png",{ frameWidth: 16, frameHeight: 16 });
   this.load.audio('music', "../assets/music/super_mario_song.mp3");
   this.load.spritesheet('coin', '../assets/items/coin.png', { frameWidth: 16, frameHeight: 16 });
@@ -44,16 +44,20 @@ function preload()
 
 function create()
 {
+  setAnimations(this);
   createMap(this);
   createPlayer(this);
   createGoomba(this);
+  createCoins(this);
 
   this.physics.add.collider(player, worldLayer);
   this.physics.add.collider(goombas, worldLayer);
+  this.physics.add.collider(coins, worldLayer);
   this.physics.add.overlap(player, goombas, enemyTouch, null, this);
+  this.physics.add.overlap(player, coins, coinTouch, null, this);
   cursors = this.input.keyboard.createCursorKeys();
 
-  setAnimations(this);
+
   setCamera(this);
   prepareMusic(this);
 
@@ -88,15 +92,21 @@ function playerMovement(that)
     }
 }
 
-function goombasMovement(that)
+function createCoins(that)
 {
 
+    coins = that.physics.add.group({
+      key: 'coin',
+      repeat: 10,
+      setXY: { x: 300, y: 0, stepX: 50 }
+    });
+    coins.createMultiple({});
+    coins.playAnimation('coin_movement');
 }
 
 function update(time, delta)
 {
   playerMovement(this);
-  goombasMovement(this);
 }
 
 function createMap(that)
@@ -117,19 +127,19 @@ function createGoomba(that)
 {
   goombas = that.physics.add.group({
     key: 'goomba',
-    repeat: 5,
-    setXY: { x: 10, y: 0, stepX: 80 }
+    repeat: 10,
+    setXY: { x: 300, y: 150, stepX: 150 }
   });
 
   goombas.children.iterate(function (child) {
-    var distance = Phaser.Math.FloatBetween(-200, 200);
+    var distance = Phaser.Math.FloatBetween(-100, 100);
 
     var tween = that.tweens.add({
       targets: child,
       x: distance,               // '+=100'              // '+=100'
       ease: 'Linear',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
-      duration: 5000,
-      repeat: 1,            // -1: infinity
+      duration: 10000,
+      repeat: 10,            // -1: infinity
       yoyo: true
 });
   });
@@ -182,6 +192,18 @@ function setAnimations(that)
    frameRate: 8,
    repeat: 1
   });
+
+  that.anims.create({
+   key: 'coin_movement',
+   frames: that.anims.generateFrameNumbers('coin', { start: 0, end: 2 }),
+   frameRate: 8,
+   repeat: -1
+  });
+}
+
+function coinTouch(player, coins)
+{
+  coins.disableBody(true, true);
 }
 
 function enemyTouch(player, goombas)
