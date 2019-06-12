@@ -9,6 +9,7 @@ let tileset;
 let worldLayer;
 let goombas;
 let coins;
+var isDead = false;
 
 const config = {
   type: Phaser.AUTO, // Which renderer to use
@@ -37,8 +38,10 @@ function preload()
   this.load.tilemapTiledJSON("map", "../assets/map/lv_4.json");
   this.load.spritesheet("mario", "../assets/npc/mario_animation.png",{ frameWidth: 16, frameHeight: 16 });
   this.load.audio('music', "../assets/music/super_mario_song.mp3");
+  this.load.audio('fail_sound',"../assets/music/mario_dead.mp3")
   this.load.spritesheet('coin', '../assets/items/coin.png', { frameWidth: 16, frameHeight: 16 });
   this.load.spritesheet('goomba', '../assets/npc/goomba.png', { frameWidth: 16, frameHeight: 16 });
+
 
 }
 
@@ -55,6 +58,7 @@ function create()
   this.physics.add.collider(coins, worldLayer);
   this.physics.add.overlap(player, goombas, enemyTouch, null, this);
   this.physics.add.overlap(player, coins, coinTouch, null, this);
+
   cursors = this.input.keyboard.createCursorKeys();
 
 
@@ -69,38 +73,34 @@ function playerMovement(that)
   {
       player.setVelocityX(-160);
       player.anims.play('left', true);
+      console.log("left")
   }
   else if (cursors.right.isDown)
   {
       player.setVelocityX(160);
       player.anims.play('right', true);
+      console.log("right")
 
   }
-  else if (cursors.up.isDown)
+  else if (cursors.up.isDown )
   {
     player.setVelocityY(-160);
     player.anims.play('up', true);
+    console.log("up")
   }
   else
   {
     player.setVelocityX(0);
   }
-
-    if (cursors.up.isDown && player.body.touching.down)
-    {
-        player.setVelocityY(-330);
-    }
 }
 
 function createCoins(that)
 {
-
     coins = that.physics.add.group({
       key: 'coin',
       repeat: 10,
       setXY: { x: 300, y: 0, stepX: 50 }
     });
-    coins.createMultiple({});
     coins.playAnimation('coin_movement');
 }
 
@@ -127,21 +127,23 @@ function createGoomba(that)
 {
   goombas = that.physics.add.group({
     key: 'goomba',
-    repeat: 10,
-    setXY: { x: 300, y: 150, stepX: 150 }
+    repeat: 15,
+    setXY: { x: 300, y: 50, stepX: 100, stepY: 30 }
   });
+  goombas.playAnimation('goomba_movement');
 
   goombas.children.iterate(function (child) {
-    var distance = Phaser.Math.FloatBetween(-100, 100);
+    var distance_x = Phaser.Math.FloatBetween(-100, 100);
 
     var tween = that.tweens.add({
       targets: child,
-      x: distance,               // '+=100'              // '+=100'
-      ease: 'Linear',       // 'Cubic', 'Elastic', 'Bounce', 'Back'
-      duration: 10000,
-      repeat: 10,            // -1: infinity
+      x: -200,
+      ease: 'Linear',
+      duration: 30000,
+      repeat: 10,
       yoyo: true
-});
+    });
+
   });
 
 }
@@ -190,7 +192,7 @@ function setAnimations(that)
    key: 'goomba_movement',
    frames: that.anims.generateFrameNumbers('goomba', { start: 0, end: 1 }),
    frameRate: 8,
-   repeat: 1
+   repeat: -1
   });
 
   that.anims.create({
@@ -206,15 +208,48 @@ function coinTouch(player, coins)
   coins.disableBody(true, true);
 }
 
+function disableGoombaBody(goombas)
+{
+  goombas.disableBody(true, true);
+}
+
+function disablePlayerBody(player)
+{
+  player.disableBody(true, true);
+}
+
 function enemyTouch(player, goombas)
 {
   if (player.body.touching.down) {
 
-    goombas.disableBody(true, true);
+    console.log("killed")
+    goombas.setFrame(2);
+    var timer = this.time.addEvent({
+    delay: 100,                // ms
+    callback: disableGoombaBody,
+    args: [goombas],
+    loop: true
+    });
 
   } else {
+    console.log("dead")
+    player.setFrame(6);
 
-    player.disableBody(true, true);
+    if(!isDead)
+    {
+      isDead = true;
+      music.stop();
+      var deadMusic = this.sound.add('fail_sound');
+      deadMusic.play();
+      player.setVelocityY(-200);
+    }
+
+    var timer = this.time.addEvent({
+    delay: 300,
+    callback: disablePlayerBody,
+    args: [player],
+    loop: true
+    });
 
   }
 
